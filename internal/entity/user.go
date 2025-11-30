@@ -10,9 +10,8 @@ type User struct {
 	Email        string `json:"email"`
 	PasswordHash string `json:"password_hash"`
 	Name         string `json:"name"`
-	FirstName    string `json:"first_name"`
-	LastName     string `json:"last_name"`
-	ImageURL     string `json:"image_url"`
+	FullName     string `json:"full_name"`
+	PictureURL   string `json:"picture_url"`
 
 	Preference Preference `gorm:"foreignKey:UserID;constraint:onDelete:CASCADE"`
 }

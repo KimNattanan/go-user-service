@@ -1,4 +1,4 @@
-package redis
+package session
 
 import (
 	"context"
@@ -16,14 +16,14 @@ func NewSessionRepo(rdb *redis.Client) *SessionRepo {
 	return &SessionRepo{rdb: rdb}
 }
 
-func (r *SessionRepo) Save(ctx context.Context, s *entity.Session) error {
-	key := "session:" + s.ID
-	ttl := time.Until(s.ExpiresAt)
+func (r *SessionRepo) Create(ctx context.Context, session *entity.Session) error {
+	key := "session:" + session.ID
+	ttl := time.Until(session.ExpiresAt)
 
 	pipe := r.rdb.TxPipeline()
-	pipe.HSet(ctx, key, s)
+	pipe.HSet(ctx, key, session)
 	pipe.Expire(ctx, key, ttl)
-	pipe.SAdd(ctx, "user_sessions:"+s.UserID, s.ID)
+	pipe.SAdd(ctx, "user_sessions:"+session.UserID, session.ID)
 
 	_, err := pipe.Exec(ctx)
 	if err != nil {
@@ -33,12 +33,12 @@ func (r *SessionRepo) Save(ctx context.Context, s *entity.Session) error {
 }
 
 func (r *SessionRepo) FindByID(ctx context.Context, id string) (*entity.Session, error) {
-	s := &entity.Session{}
-	err := r.rdb.HGetAll(ctx, "session:"+id).Scan(s)
+	var session entity.Session
+	err := r.rdb.HGetAll(ctx, "session:"+id).Scan(&session)
 	if err != nil {
 		return nil, err
 	}
-	return s, nil
+	return &session, nil
 }
 
 func (r *SessionRepo) FindByUserID(ctx context.Context, userID string) ([]*entity.Session, error) {

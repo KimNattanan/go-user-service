@@ -5,12 +5,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/KimNattanan/go-user-service/internal/entity"
 	"github.com/KimNattanan/go-user-service/internal/usecase"
 	"github.com/KimNattanan/go-user-service/pkg/apperror"
 	"github.com/google/uuid"
+	"github.com/gorilla/sessions"
 	"golang.org/x/oauth2"
 )
 
@@ -18,6 +20,7 @@ type HttpUserHandler struct {
 	userUsecase       usecase.UserUsecase
 	sessionUsecase    usecase.SessionUsecase
 	googleOauthConfig *oauth2.Config
+	sessionStore      sessions.Store
 }
 
 func NewHttpUserHandler(userUsecase usecase.UserUsecase) *HttpUserHandler {
@@ -97,5 +100,10 @@ func (h *HttpUserHandler) GoogleCallback(w http.ResponseWriter, r *http.Request)
 		HttpOnly: true,
 		Secure:   false,
 	})
+	cookieSession, _ := h.sessionStore.Get(r, "user-session")
+	cookieSession.Values["session_id"] = session.ID
+	cookieSession.Save(r, w)
 
+	w.Header().Set("Location", os.Getenv("FRONTEND_OAUTH_REDIRECT_URL"))
+	w.WriteHeader(http.StatusSeeOther)
 }

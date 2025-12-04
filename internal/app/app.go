@@ -2,15 +2,20 @@ package app
 
 import (
 	"log"
+	"os"
 
+	"github.com/KimNattanan/go-user-service/internal/middleware"
 	"github.com/KimNattanan/go-user-service/pkg/database"
+	"github.com/KimNattanan/go-user-service/pkg/redisclient"
 	"github.com/KimNattanan/go-user-service/pkg/routes"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 )
 
-func setupDependencies(env string) (*gorm.DB, error) {
+func setupDependencies(env string) (*gorm.DB, *redis.Client, sessions.Store, error) {
 	envFile := ".env"
 	if env != "" {
 		envFile = ".env." + env
@@ -21,14 +26,22 @@ func setupDependencies(env string) (*gorm.DB, error) {
 
 	db, err := database.Connect()
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
-	return db, nil
+	rdb := redisclient.Connect()
+
+	authKey := []byte(os.Getenv("SESSION_AUTH_KEY"))
+	encKey := []byte(os.Getenv("SESSION_ENC_KEY"))
+	sessionStore := sessions.NewCookieStore(authKey, encKey)
+
+	return db, rdb, sessionStore, nil
 }
 
-func setupRestServer(db *gorm.DB) *mux.Router {
+func setupRestServer(db *gorm.DB, rdb *redis.Client, sessionStore sessions.Store) *mux.Router {
 	r := mux.NewRouter()
-	routes.RegisterPublicRoutes(r, db)
+	r.Use(middleware.CORS)
+	routes.RegisterPublicRoutes(r, db, rdb, sessionStore)
+	routes.RegisterPrivateRoutes(r, db, rdb, sessionStore)
 	return r
 }

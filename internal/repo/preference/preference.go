@@ -24,14 +24,14 @@ func (r *PreferenceRepo) FindByUserID(ctx context.Context, userID string) (*enti
 	return &preference, nil
 }
 
-func (r *PreferenceRepo) Update(ctx context.Context, userID string, fields map[string]interface{}) error {
+func (r *PreferenceRepo) Update(ctx context.Context, userID string, fields map[string]interface{}) (*entity.Preference, error) {
 	db := r.db.WithContext(ctx)
 	result := db.Model(&entity.Preference{}).Where("user_id = ?", userID).Updates(fields)
 	if result.Error != nil {
-		return result.Error
+		return nil, result.Error
 	}
 	if result.RowsAffected == 0 {
-		return gorm.ErrRecordNotFound
+		return nil, gorm.ErrRecordNotFound
 	}
-	return nil
+	return r.FindByUserID(ctx, userID)
 }

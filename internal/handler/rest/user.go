@@ -11,7 +11,7 @@ import (
 	"github.com/KimNattanan/go-user-service/internal/entity"
 	"github.com/KimNattanan/go-user-service/internal/usecase"
 	"github.com/KimNattanan/go-user-service/pkg/apperror"
-	"github.com/google/uuid"
+	"github.com/KimNattanan/go-user-service/pkg/token"
 	"github.com/gorilla/sessions"
 	"golang.org/x/oauth2"
 )
@@ -19,13 +19,18 @@ import (
 type HttpUserHandler struct {
 	userUsecase       usecase.UserUsecase
 	sessionUsecase    usecase.SessionUsecase
-	googleOauthConfig *oauth2.Config
 	sessionStore      sessions.Store
+	googleOauthConfig *oauth2.Config
+	jwtMaker          *token.JWTMaker
 }
 
-func NewHttpUserHandler(userUsecase usecase.UserUsecase) *HttpUserHandler {
+func NewHttpUserHandler(userUsecase usecase.UserUsecase, sessionUsecase usecase.SessionUsecase, sessionStore sessions.Store, googleOauthConfig *oauth2.Config, jwtMaker *token.JWTMaker) *HttpUserHandler {
 	return &HttpUserHandler{
-		userUsecase: userUsecase,
+		userUsecase:       userUsecase,
+		sessionUsecase:    sessionUsecase,
+		sessionStore:      sessionStore,
+		googleOauthConfig: googleOauthConfig,
+		jwtMaker:          jwtMaker,
 	}
 }
 
@@ -82,15 +87,27 @@ func (h *HttpUserHandler) GoogleCallback(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	refreshToken, refreshClaims, err := h.jwtMaker.CreateToken(user.ID, time.Hour*24*30)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	accessToken, _, err := h.jwtMaker.CreateToken(user.ID, time.Hour)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	session := &entity.Session{
-		ID:           uuid.New().String(),
-		UserID:       user.ID,
-		RefreshToken: token.RefreshToken,
-		IsRevoked:    false,
-		ExpiresAt:    token.Expiry,
+		ID:                 refreshClaims.RegisteredClaims.ID,
+		UserID:             user.ID,
+		GoogleRefreshToken: token.RefreshToken,
+		IsRevoked:          false,
+		CreatedAt:          time.Now(),
+		ExpiresAt:          refreshClaims.RegisteredClaims.ExpiresAt.Time,
 	}
 	if err := h.sessionUsecase.Create(r.Context(), session); err != nil {
-		http.Error(w, err.Error(), apperror.StatusCode(err))
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -100,10 +117,26 @@ func (h *HttpUserHandler) GoogleCallback(w http.ResponseWriter, r *http.Request)
 		HttpOnly: true,
 		Secure:   false,
 	})
-	cookieSession, _ := h.sessionStore.Get(r, "user-session")
-	cookieSession.Values["session_id"] = session.ID
-	cookieSession.Save(r, w)
+	cookieSession, _ := h.sessionStore.Get(r, "session")
+	cookieSession.Values["access_token"] = accessToken
+	cookieSession.Values["refresh_token"] = refreshToken
+	if err := cookieSession.Save(r, w); err != nil {
+		http.Error(w, err.Error(), apperror.StatusCode(err))
+		return
+	}
 
 	w.Header().Set("Location", os.Getenv("FRONTEND_OAUTH_REDIRECT_URL"))
 	w.WriteHeader(http.StatusSeeOther)
+}
+
+func (h *HttpUserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	ctx := r.Context()
+	userID, _ := ctx.Value("userID").(string)
+	user, err := h.userUsecase.FindByID(ctx, userID)
+	if err != nil {
+		http.Error(w, err.Error(), apperror.StatusCode(err))
+		return
+	}
+	json.NewEncoder(w).Encode(user)
 }

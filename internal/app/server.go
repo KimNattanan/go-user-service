@@ -6,11 +6,11 @@ import (
 )
 
 func Start() {
-	db, err := setupDependencies("development")
+	db, rdb, sessionStore, err := setupDependencies("development")
 	if err != nil {
 		log.Fatalf("failed to setup dependencies: %v", err)
 	}
-	r := setupRestServer(db)
+	r := setupRestServer(db, rdb, sessionStore)
 
 	http.ListenAndServe(":8000", r)
 }

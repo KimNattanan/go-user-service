@@ -38,16 +38,16 @@ func (r *UserRepo) FindByEmail(ctx context.Context, email string) (*entity.User,
 	return &user, nil
 }
 
-func (r *UserRepo) Update(ctx context.Context, id string, fields map[string]interface{}) error {
+func (r *UserRepo) Update(ctx context.Context, id string, fields map[string]interface{}) (*entity.User, error) {
 	db := r.db.WithContext(ctx)
 	result := db.Model(&entity.User{}).Where("id = ?", id).Updates(fields)
 	if result.Error != nil {
-		return result.Error
+		return nil, result.Error
 	}
 	if result.RowsAffected == 0 {
-		return gorm.ErrRecordNotFound
+		return nil, gorm.ErrRecordNotFound
 	}
-	return nil
+	return r.FindByID(ctx, id)
 }
 
 func (r *UserRepo) Delete(ctx context.Context, id string) error {

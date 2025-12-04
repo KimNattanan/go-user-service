@@ -19,6 +19,6 @@ func (u *PreferenceUsecase) FindByUserID(ctx context.Context, userID string) (*e
 	return u.repo.FindByUserID(ctx, userID)
 }
 
-func (u *PreferenceUsecase) Update(ctx context.Context, userID string, fields map[string]interface{}) error {
+func (u *PreferenceUsecase) Update(ctx context.Context, userID string, fields map[string]interface{}) (*entity.Preference, error) {
 	return u.repo.Update(ctx, userID, fields)
 }

@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/KimNattanan/go-user-service/internal/handler/rest"
+	"github.com/KimNattanan/go-user-service/internal/middleware"
 	"github.com/KimNattanan/go-user-service/pkg/token"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/oauth2"
@@ -20,9 +21,9 @@ import (
 	"gorm.io/gorm"
 )
 
-func RegisterPublicRoutes(r *mux.Router, db *gorm.DB, rdb *redis.Client, sessionStore sessions.Store) {
+func RegisterPrivateRoutes(r *mux.Router, db *gorm.DB, rdb *redis.Client, sessionStore sessions.Store) {
 	api := r.PathPrefix("/api/v2").Subrouter()
-	
+
 	jwtMaker := token.NewJWTMaker(os.Getenv("JWT_SECRET"))
 
 	userRepo := userRepo.NewUserRepo(db)
@@ -40,7 +41,9 @@ func RegisterPublicRoutes(r *mux.Router, db *gorm.DB, rdb *redis.Client, session
 	}
 	userHandler := rest.NewHttpUserHandler(userUsecase, sessionUsecase, sessionStore, googleOauthConfig, jwtMaker)
 
-	authGroup := api.PathPrefix("/auth").Subrouter()
-	authGroup.HandleFunc("/api/v2/auth/google/login", userHandler.GoogleLogin)
-	authGroup.HandleFunc("/api/v2/auth/google/callback", userHandler.GoogleCallback)
+	authMiddleware := middleware.NewAuthMiddleware(userUsecase, sessionUsecase, sessionStore, jwtMaker, googleOauthConfig)
+
+	userGroup := api.PathPrefix("/user").Subrouter()
+	userGroup.Use(authMiddleware.Handle)
+	userGroup.HandleFunc("/", userHandler.GetUser)
 }

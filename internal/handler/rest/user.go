@@ -8,10 +8,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/KimNattanan/go-user-service/internal/dto"
 	"github.com/KimNattanan/go-user-service/internal/entity"
 	"github.com/KimNattanan/go-user-service/internal/usecase"
 	"github.com/KimNattanan/go-user-service/pkg/apperror"
 	"github.com/KimNattanan/go-user-service/pkg/token"
+	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"golang.org/x/oauth2"
 )
@@ -51,6 +53,7 @@ func (h *HttpUserHandler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *HttpUserHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	query := r.URL.Query()
 	if state, err := r.Cookie("oauthstate"); err != nil || state.Value != query.Get("state") {
 		http.Error(w, "invalid oauth state", http.StatusUnauthorized)
@@ -61,13 +64,13 @@ func (h *HttpUserHandler) GoogleCallback(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "code not found", http.StatusBadRequest)
 		return
 	}
-	token, err := h.googleOauthConfig.Exchange(r.Context(), code)
+	token, err := h.googleOauthConfig.Exchange(ctx, code)
 	if err != nil {
 		http.Error(w, "failed to exchange token", http.StatusUnauthorized)
 		return
 	}
 
-	client := h.googleOauthConfig.Client(r.Context(), token)
+	client := h.googleOauthConfig.Client(ctx, token)
 	clientRes, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
 	if err != nil {
 		http.Error(w, "failed to get user info", apperror.StatusCode(err))
@@ -81,7 +84,7 @@ func (h *HttpUserHandler) GoogleCallback(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	user, err := h.userUsecase.LoginOrRegisterWithGoogle(r.Context(), userInfo)
+	user, err := h.userUsecase.LoginOrRegisterWithGoogle(ctx, userInfo)
 	if err != nil {
 		http.Error(w, err.Error(), apperror.StatusCode(err))
 		return
@@ -106,7 +109,7 @@ func (h *HttpUserHandler) GoogleCallback(w http.ResponseWriter, r *http.Request)
 		CreatedAt:          time.Now(),
 		ExpiresAt:          refreshClaims.RegisteredClaims.ExpiresAt.Time,
 	}
-	if err := h.sessionUsecase.Create(r.Context(), session); err != nil {
+	if err := h.sessionUsecase.Create(ctx, session); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -129,14 +132,100 @@ func (h *HttpUserHandler) GoogleCallback(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusSeeOther)
 }
 
-func (h *HttpUserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
+func (h *HttpUserHandler) Logout(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	ctx := r.Context()
+
+	cookieSession, err := h.sessionStore.Get(r, "session")
+	if err != nil {
+		http.Error(w, apperror.ErrUnauthorized.Error(), http.StatusUnauthorized)
+		return
+	}
+	refreshToken, _ := cookieSession.Values["refresh_token"].(string)
+	refreshClaims, err := h.jwtMaker.VerfiyToken(refreshToken)
+	if err != nil {
+		http.Error(w, apperror.ErrUnauthorized.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	if err := h.sessionUsecase.Revoke(ctx, refreshClaims.RegisteredClaims.ID); err != nil {
+		http.Error(w, err.Error(), apperror.StatusCode(err))
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *HttpUserHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	ctx := r.Context()
 	userID, _ := ctx.Value("userID").(string)
+
+	if err := h.userUsecase.Delete(ctx, userID); err != nil {
+		http.Error(w, err.Error(), apperror.StatusCode(err))
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *HttpUserHandler) FindUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	ctx := r.Context()
+	vars := mux.Vars(r)
+	userID := vars["id"]
+
 	user, err := h.userUsecase.FindByID(ctx, userID)
 	if err != nil {
 		http.Error(w, err.Error(), apperror.StatusCode(err))
 		return
 	}
-	json.NewEncoder(w).Encode(user)
+
+	json.NewEncoder(w).Encode(dto.ToUserResponse(user))
+}
+
+func (h *HttpUserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	ctx := r.Context()
+	userID, _ := ctx.Value("userID").(string)
+
+	user, err := h.userUsecase.FindByID(ctx, userID)
+	if err != nil {
+		http.Error(w, err.Error(), apperror.StatusCode(err))
+		return
+	}
+
+	json.NewEncoder(w).Encode(dto.ToUserResponse(user))
+}
+
+func (h *HttpUserHandler) Update(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	ctx := r.Context()
+	userID, _ := ctx.Value("userID").(string)
+
+	var (
+		data0 dto.UserUpdateRequest
+		data  map[string]interface{}
+	)
+	if err := json.NewDecoder(r.Body).Decode(&data0); err != nil {
+		http.Error(w, apperror.ErrInvalidData.Error(), http.StatusBadRequest)
+		return
+	}
+	dataBytes, err := json.Marshal(data0)
+	if err != nil {
+		http.Error(w, apperror.ErrInternalServer.Error(), http.StatusInternalServerError)
+		return
+	}
+	if err := json.Unmarshal(dataBytes, &data); err != nil {
+		http.Error(w, apperror.ErrInternalServer.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	user, err := h.userUsecase.Update(ctx, userID, data)
+	if err != nil {
+		http.Error(w, err.Error(), apperror.StatusCode(err))
+		return
+	}
+
+	json.NewEncoder(w).Encode(dto.ToUserResponse(user))
 }

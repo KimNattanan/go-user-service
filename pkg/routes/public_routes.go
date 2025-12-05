@@ -41,6 +41,9 @@ func RegisterPublicRoutes(r *mux.Router, db *gorm.DB, rdb *redis.Client, session
 	userHandler := rest.NewHttpUserHandler(userUsecase, sessionUsecase, sessionStore, googleOauthConfig, jwtMaker)
 
 	authGroup := api.PathPrefix("/auth").Subrouter()
-	authGroup.HandleFunc("/api/v2/auth/google/login", userHandler.GoogleLogin)
-	authGroup.HandleFunc("/api/v2/auth/google/callback", userHandler.GoogleCallback)
+	authGroup.HandleFunc("/google/login", userHandler.GoogleLogin)
+	authGroup.HandleFunc("/google/callback", userHandler.GoogleCallback)
+
+	userGroup := api.PathPrefix("/user").Subrouter()
+	userGroup.HandleFunc("/{id}", userHandler.FindUser)
 }

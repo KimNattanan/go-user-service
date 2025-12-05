@@ -31,9 +31,7 @@ func setupDependencies(env string) (*gorm.DB, *redis.Client, sessions.Store, err
 
 	rdb := redisclient.Connect()
 
-	authKey := []byte(os.Getenv("SESSION_AUTH_KEY"))
-	encKey := []byte(os.Getenv("SESSION_ENC_KEY"))
-	sessionStore := sessions.NewCookieStore(authKey, encKey)
+	sessionStore := sessions.NewCookieStore([]byte(os.Getenv("SESSION_KEY")))
 
 	return db, rdb, sessionStore, nil
 }

@@ -2,6 +2,7 @@ package session
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/KimNattanan/go-user-service/internal/entity"
@@ -20,24 +21,33 @@ func (r *SessionRepo) Create(ctx context.Context, session *entity.Session) error
 	key := "session:" + session.ID
 	ttl := time.Until(session.ExpiresAt)
 
+	data, err := json.Marshal(session)
+	if err != nil {
+		return err
+	}
+
 	pipe := r.rdb.TxPipeline()
-	pipe.HSet(ctx, key, session)
-	pipe.Expire(ctx, key, ttl)
+	pipe.Set(ctx, key, data, ttl)
 	pipe.SAdd(ctx, "user_sessions:"+session.UserID, session.ID)
 
-	_, err := pipe.Exec(ctx)
-	if err != nil {
+	if _, err := pipe.Exec(ctx); err != nil {
 		return err
 	}
 	return nil
 }
 
 func (r *SessionRepo) FindByID(ctx context.Context, id string) (*entity.Session, error) {
-	var session entity.Session
-	err := r.rdb.HGetAll(ctx, "session:"+id).Scan(&session)
+	key := "session:" + id
+
+	data, err := r.rdb.Get(ctx, key).Bytes()
 	if err != nil {
 		return nil, err
 	}
+	var session entity.Session
+	if err := json.Unmarshal(data, &session); err != nil {
+		return nil, err
+	}
+
 	return &session, nil
 }
 
@@ -52,9 +62,9 @@ func (r *SessionRepo) FindByUserID(ctx context.Context, userID string) ([]*entit
 	}
 
 	pipe := r.rdb.Pipeline()
-	cmds := make([]*redis.MapStringStringCmd, len(sessionIDs))
+	cmds := make([]*redis.StringCmd, len(sessionIDs))
 	for i, id := range sessionIDs {
-		cmds[i] = pipe.HGetAll(ctx, "session:"+id)
+		cmds[i] = pipe.Get(ctx, "session:"+id)
 	}
 	_, err = pipe.Exec(ctx)
 	if err != nil {
@@ -65,7 +75,10 @@ func (r *SessionRepo) FindByUserID(ctx context.Context, userID string) ([]*entit
 	var staleIDs []string
 	for i, cmd := range cmds {
 		s := &entity.Session{}
-		err := cmd.Scan(s)
+		data, err := cmd.Bytes()
+		if err == nil {
+			err = json.Unmarshal(data, &s)
+		}
 		if err != nil || s.ID == "" {
 			staleIDs = append(staleIDs, sessionIDs[i])
 		} else {

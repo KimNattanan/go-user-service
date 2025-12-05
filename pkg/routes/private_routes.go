@@ -16,6 +16,9 @@ import (
 	sessionRepo "github.com/KimNattanan/go-user-service/internal/repo/session"
 	sessionUsecase "github.com/KimNattanan/go-user-service/internal/usecase/session"
 
+	preferenceRepo "github.com/KimNattanan/go-user-service/internal/repo/preference"
+	preferenceUsecase "github.com/KimNattanan/go-user-service/internal/usecase/preference"
+
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"gorm.io/gorm"
@@ -25,13 +28,6 @@ func RegisterPrivateRoutes(r *mux.Router, db *gorm.DB, rdb *redis.Client, sessio
 	api := r.PathPrefix("/api/v2").Subrouter()
 
 	jwtMaker := token.NewJWTMaker(os.Getenv("JWT_SECRET"))
-
-	userRepo := userRepo.NewUserRepo(db)
-	sessionRepo := sessionRepo.NewSessionRepo(rdb)
-
-	userUsecase := userUsecase.NewUserUsecase(userRepo)
-	sessionUsecase := sessionUsecase.NewSessionUsecase(sessionRepo)
-
 	googleOauthConfig := &oauth2.Config{
 		ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
 		ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
@@ -39,11 +35,28 @@ func RegisterPrivateRoutes(r *mux.Router, db *gorm.DB, rdb *redis.Client, sessio
 		Scopes:       []string{"openid", "email", "profile"},
 		Endpoint:     google.Endpoint,
 	}
+
+	userRepo := userRepo.NewUserRepo(db)
+	sessionRepo := sessionRepo.NewSessionRepo(rdb)
+	preferenceRepo := preferenceRepo.NewPreferenceRepo(db)
+
+	userUsecase := userUsecase.NewUserUsecase(userRepo)
+	sessionUsecase := sessionUsecase.NewSessionUsecase(sessionRepo)
+	preferenceUsecase := preferenceUsecase.NewPreferenceUsecase(preferenceRepo)
+
 	userHandler := rest.NewHttpUserHandler(userUsecase, sessionUsecase, sessionStore, googleOauthConfig, jwtMaker)
+	preferenceHandler := rest.NewHttpPreferenceHandler(preferenceUsecase)
 
 	authMiddleware := middleware.NewAuthMiddleware(userUsecase, sessionUsecase, sessionStore, jwtMaker, googleOauthConfig)
+	api.Use(authMiddleware.Handle)
 
 	userGroup := api.PathPrefix("/user").Subrouter()
-	userGroup.Use(authMiddleware.Handle)
-	userGroup.HandleFunc("/", userHandler.GetUser)
+	userGroup.HandleFunc("/me", userHandler.GetUser)
+	userGroup.HandleFunc("/me", userHandler.Update).Methods("PATCH")
+	userGroup.HandleFunc("/me/logout", userHandler.Logout).Methods("POST")
+	userGroup.HandleFunc("/me", userHandler.Delete).Methods("DELETE")
+
+	preferenceGroup := api.PathPrefix("/preference").Subrouter()
+	preferenceGroup.HandleFunc("/", preferenceHandler.GetPreference)
+	preferenceGroup.HandleFunc("/", preferenceHandler.Update).Methods("PATCH")
 }

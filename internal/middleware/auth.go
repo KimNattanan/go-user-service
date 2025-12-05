@@ -52,13 +52,13 @@ func (m *AuthMiddleware) Handle(next http.Handler) http.Handler {
 			http.Error(w, apperror.ErrUnauthorized.Error(), http.StatusUnauthorized)
 			return
 		}
-		session, err := m.sessionUsecase.FindByID(r.Context(), refreshClaims.RegisteredClaims.ID)
-		if err != nil || session == nil || session.IsRevoked {
+		user, err := m.userUsecase.FindByID(r.Context(), refreshClaims.ID)
+		if err != nil || user == nil {
 			http.Error(w, apperror.ErrUnauthorized.Error(), http.StatusUnauthorized)
 			return
 		}
-		user, err := m.userUsecase.FindByID(r.Context(), refreshClaims.ID)
-		if err != nil || user == nil {
+		session, err := m.sessionUsecase.FindByID(r.Context(), refreshClaims.RegisteredClaims.ID)
+		if err != nil || session == nil || session.IsRevoked {
 			http.Error(w, apperror.ErrUnauthorized.Error(), http.StatusUnauthorized)
 			return
 		}
@@ -66,7 +66,7 @@ func (m *AuthMiddleware) Handle(next http.Handler) http.Handler {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		go func() {
+		go func() { // update user's info
 			client := m.googleOauthConfig.Client(r.Context(), &oauth2.Token{
 				RefreshToken: session.GoogleRefreshToken,
 			})
@@ -104,7 +104,7 @@ func (m *AuthMiddleware) Handle(next http.Handler) http.Handler {
 			UserID:             user.ID,
 			GoogleRefreshToken: session.GoogleRefreshToken,
 			IsRevoked:          false,
-			CreatedAt:          time.Now(),
+			CreatedAt:          session.CreatedAt,
 			ExpiresAt:          refreshClaims.RegisteredClaims.ExpiresAt.Time,
 		}
 		if err := m.sessionUsecase.Create(r.Context(), newSession); err != nil {

@@ -1,0 +1,30 @@
+package dto
+
+import "github.com/KimNattanan/go-user-service/internal/entity"
+
+type UserResponse struct {
+	Email      string `json:"email"`
+	Name       string `json:"name"`
+	FirstName  string `json:"first_name"`
+	LastName   string `json:"last_name"`
+	PictureURL string `json:"picture_url"`
+	Preference *PreferenceResponse
+}
+
+type UserUpdateRequest struct {
+	Name       string `json:"name"`
+	FirstName  string `json:"first_name"`
+	LastName   string `json:"last_name"`
+	PictureURL string `json:"picture_url"`
+}
+
+func ToUserResponse(user *entity.User) *UserResponse {
+	return &UserResponse{
+		Email:      user.Email,
+		Name:       user.Name,
+		FirstName:  user.FirstName,
+		LastName:   user.LastName,
+		PictureURL: user.PictureURL,
+		Preference: ToPreferenceResponse(&user.Preference),
+	}
+}

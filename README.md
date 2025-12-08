@@ -1,3 +1,5 @@
+![https://iconbu.com/illust/4214](https://github.com/user-attachments/assets/4bdad212-b6e8-444e-aefb-560796c3c56d "https://iconbu.com/illust/4214")
+
 # go-user-service
 
 A Go-based user authentication service built with Clean Architecture, featuring Google OAuth2 login/signup, secure access/refresh token flows with rotation, and a clean modular structure.
@@ -29,15 +31,15 @@ cd go-user-service
 go mod tidy
 ```
 
-4. Copy the environment file `.env.example`, rename it to `.env.development`, and configure it.
+3. Copy the environment file `.env.example`, rename it to `.env.development`, and configure it.
 
-5. Start the databases using Docker Compose:
+4. Start the databases using Docker Compose:
 
 ```sh
 docker-compose up -d
 ```
 
-6. Run the application:
+5. Run the application:
 
 ```sh
 go run ./cmd/app

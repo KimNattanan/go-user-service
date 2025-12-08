@@ -2,7 +2,8 @@
   <img 
     src="https://github.com/user-attachments/assets/4bdad212-b6e8-444e-aefb-560796c3c56d"
     alt="https://iconbu.com/illust/4214"
-    width="375"
+    width="200"
+    style="pointer-events: none;"
   />
 </p>
 

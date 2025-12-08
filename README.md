@@ -1,4 +1,10 @@
-![https://iconbu.com/illust/4214](https://github.com/user-attachments/assets/4bdad212-b6e8-444e-aefb-560796c3c56d "https://iconbu.com/illust/4214")
+<p align="center">
+  <img 
+    src="https://github.com/user-attachments/assets/4bdad212-b6e8-444e-aefb-560796c3c56d"
+    alt="https://iconbu.com/illust/4214"
+    width="375"
+  />
+</p>
 
 # go-user-service
 

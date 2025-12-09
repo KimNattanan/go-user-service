@@ -185,9 +185,4 @@ paths:
       summary: Get public user profile by ID
       tags:
       - Users
-securityDefinitions:
-  SessionCookie:
-    in: cookie
-    name: session
-    type: apiKey
 swagger: "2.0"

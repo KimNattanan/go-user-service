@@ -292,13 +292,6 @@ const docTemplate = `{
                 }
             }
         }
-    },
-    "securityDefinitions": {
-        "SessionCookie": {
-            "type": "apiKey",
-            "name": "session",
-            "in": "cookie"
-        }
     }
 }`
 

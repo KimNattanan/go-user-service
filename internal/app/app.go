@@ -13,6 +13,9 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
+
+	_ "github.com/KimNattanan/go-user-service/docs"
+	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
 func setupDependencies(env string) (*gorm.DB, *redis.Client, sessions.Store, error) {
@@ -41,5 +44,6 @@ func setupRestServer(db *gorm.DB, rdb *redis.Client, sessionStore sessions.Store
 	r.Use(middleware.CORS)
 	routes.RegisterPublicRoutes(r, db, rdb, sessionStore)
 	routes.RegisterPrivateRoutes(r, db, rdb, sessionStore)
+	r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 	return r
 }

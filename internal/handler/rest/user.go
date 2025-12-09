@@ -36,6 +36,11 @@ func NewHttpUserHandler(userUsecase usecase.UserUsecase, sessionUsecase usecase.
 	}
 }
 
+// @Summary Redirect to Google OAuth login
+// @Tags Auth
+// @Description Redirects user to Google OAuth provider
+// @Success 302
+// @Router /auth/google/login [get]
 func (h *HttpUserHandler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
 	b := make([]byte, 16)
 	rand.Read(b)
@@ -52,6 +57,13 @@ func (h *HttpUserHandler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusFound)
 }
 
+// @Summary OAuth callback from Google
+// @Tags Auth
+// @Description Handles Google OAuth callback and creates a session
+// @Success 303
+// @Failure 400 {string} string
+// @Failure 401 {string} string
+// @Router /auth/google/callback [get]
 func (h *HttpUserHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	query := r.URL.Query()
@@ -132,6 +144,10 @@ func (h *HttpUserHandler) GoogleCallback(w http.ResponseWriter, r *http.Request)
 	w.WriteHeader(http.StatusSeeOther)
 }
 
+// @Summary Logout user
+// @Tags Auth
+// @Success 204
+// @Router /auth/logout [post]
 func (h *HttpUserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	ctx := r.Context()
@@ -152,10 +168,16 @@ func (h *HttpUserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), apperror.StatusCode(err))
 		return
 	}
+	cookieSession.Values["access_token"] = ""
+	cookieSession.Save(r, w)
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// @Summary Delete current user
+// @Tags Me
+// @Success 204
+// @Router /me [delete]
 func (h *HttpUserHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	ctx := r.Context()
@@ -169,6 +191,12 @@ func (h *HttpUserHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// @Summary Get public user profile by ID
+// @Tags Users
+// @Param id path string true "User ID"
+// @Success 200 {object} dto.UserResponse
+// @Failure 404 {string} string
+// @Router /users/{id} [get]
 func (h *HttpUserHandler) FindUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	ctx := r.Context()
@@ -184,6 +212,10 @@ func (h *HttpUserHandler) FindUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(dto.ToUserResponse(user))
 }
 
+// @Summary Get current user
+// @Tags Me
+// @Success 200 {object} dto.UserResponse
+// @Router /me [get]
 func (h *HttpUserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	ctx := r.Context()
@@ -198,6 +230,12 @@ func (h *HttpUserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(dto.ToUserResponse(user))
 }
 
+// @Summary Update current user
+// @Tags Me
+// @Param request body dto.UserUpdateRequest true "Update user payload"
+// @Success 200 {object} dto.UserResponse
+// @Failure 400 {string} string
+// @Router /me [patch]
 func (h *HttpUserHandler) Update(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	ctx := r.Context()

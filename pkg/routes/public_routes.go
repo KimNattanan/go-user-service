@@ -22,7 +22,7 @@ import (
 
 func RegisterPublicRoutes(r *mux.Router, db *gorm.DB, rdb *redis.Client, sessionStore sessions.Store) {
 	api := r.PathPrefix("/api/v2").Subrouter()
-	
+
 	jwtMaker := token.NewJWTMaker(os.Getenv("JWT_SECRET"))
 
 	userRepo := userRepo.NewUserRepo(db)
@@ -41,9 +41,9 @@ func RegisterPublicRoutes(r *mux.Router, db *gorm.DB, rdb *redis.Client, session
 	userHandler := rest.NewHttpUserHandler(userUsecase, sessionUsecase, sessionStore, googleOauthConfig, jwtMaker)
 
 	authGroup := api.PathPrefix("/auth").Subrouter()
-	authGroup.HandleFunc("/google/login", userHandler.GoogleLogin)
-	authGroup.HandleFunc("/google/callback", userHandler.GoogleCallback)
+	authGroup.HandleFunc("/google/login", userHandler.GoogleLogin).Methods("GET")
+	authGroup.HandleFunc("/google/callback", userHandler.GoogleCallback).Methods("GET")
 
-	userGroup := api.PathPrefix("/user").Subrouter()
-	userGroup.HandleFunc("/{id}", userHandler.FindUser)
+	userGroup := api.PathPrefix("/users").Subrouter()
+	userGroup.HandleFunc("/{id}", userHandler.FindUser).Methods("GET")
 }

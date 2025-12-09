@@ -17,6 +17,10 @@ func NewHttpPreferenceHandler(preferenceUsecase usecase.PreferenceUsecase) *Http
 	return &HttpPreferenceHandler{preferenceUsecase: preferenceUsecase}
 }
 
+// @Summary Get user preferences
+// @Tags Preferences
+// @Success 200 {object} dto.PreferenceResponse
+// @Router /me/preferences [get]
 func (h *HttpPreferenceHandler) GetPreference(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	ctx := r.Context()
@@ -31,6 +35,11 @@ func (h *HttpPreferenceHandler) GetPreference(w http.ResponseWriter, r *http.Req
 	json.NewEncoder(w).Encode(preference)
 }
 
+// @Summary Update user preferences
+// @Tags Preferences
+// @Param request body dto.PreferenceUpdateRequest true "Preference data"
+// @Success 200 {object} dto.PreferenceResponse
+// @Router /me/preferences [patch]
 func (h *HttpPreferenceHandler) Update(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	ctx := r.Context()

@@ -1,0 +1,168 @@
+basePath: /api/v2
+definitions:
+  dto.PreferenceResponse:
+    properties:
+      theme:
+        type: string
+    type: object
+  dto.PreferenceUpdateRequest:
+    properties:
+      theme:
+        type: string
+    type: object
+  dto.UserResponse:
+    properties:
+      email:
+        type: string
+      first_name:
+        type: string
+      last_name:
+        type: string
+      name:
+        type: string
+      picture_url:
+        type: string
+      preference:
+        $ref: '#/definitions/dto.PreferenceResponse'
+    type: object
+  dto.UserUpdateRequest:
+    properties:
+      first_name:
+        type: string
+      last_name:
+        type: string
+      name:
+        type: string
+      picture_url:
+        type: string
+    type: object
+host: localhost:8000
+info:
+  contact: {}
+  description: Public + Private API for auth, users, and preferences.
+  title: User Service API
+  version: "1.0"
+paths:
+  /auth/google/callback:
+    get:
+      description: Handles Google OAuth callback and creates a session
+      responses:
+        "303":
+          description: See Other
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+      summary: OAuth callback from Google
+      tags:
+      - Auth
+  /auth/google/login:
+    get:
+      description: Redirects user to Google OAuth provider
+      responses:
+        "302":
+          description: Found
+      summary: Redirect to Google OAuth login
+      tags:
+      - Auth
+  /auth/logout:
+    post:
+      responses:
+        "204":
+          description: No Content
+      summary: Logout user
+      tags:
+      - Auth
+  /me:
+    delete:
+      responses:
+        "204":
+          description: No Content
+      summary: Delete current user
+      tags:
+      - Me
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+      summary: Get current user
+      tags:
+      - Me
+    patch:
+      parameters:
+      - description: Update user payload
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.UserUpdateRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+      summary: Update current user
+      tags:
+      - Me
+  /me/preferences:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PreferenceResponse'
+      summary: Get user preferences
+      tags:
+      - Preferences
+    patch:
+      parameters:
+      - description: Preference data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.PreferenceUpdateRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.PreferenceResponse'
+      summary: Update user preferences
+      tags:
+      - Preferences
+  /users/{id}:
+    get:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "404":
+          description: Not Found
+          schema:
+            type: string
+      summary: Get public user profile by ID
+      tags:
+      - Users
+securityDefinitions:
+  SessionCookie:
+    in: cookie
+    name: session
+    type: apiKey
+swagger: "2.0"

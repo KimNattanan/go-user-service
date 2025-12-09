@@ -50,13 +50,15 @@ func RegisterPrivateRoutes(r *mux.Router, db *gorm.DB, rdb *redis.Client, sessio
 	authMiddleware := middleware.NewAuthMiddleware(userUsecase, sessionUsecase, sessionStore, jwtMaker, googleOauthConfig)
 	api.Use(authMiddleware.Handle)
 
-	userGroup := api.PathPrefix("/user").Subrouter()
-	userGroup.HandleFunc("/me", userHandler.GetUser)
-	userGroup.HandleFunc("/me", userHandler.Update).Methods("PATCH")
-	userGroup.HandleFunc("/me/logout", userHandler.Logout).Methods("POST")
-	userGroup.HandleFunc("/me", userHandler.Delete).Methods("DELETE")
+	authGroup := api.PathPrefix("/auth").Subrouter()
+	authGroup.HandleFunc("/logout", userHandler.Logout).Methods("POST")
 
-	preferenceGroup := api.PathPrefix("/preference").Subrouter()
-	preferenceGroup.HandleFunc("/", preferenceHandler.GetPreference)
-	preferenceGroup.HandleFunc("/", preferenceHandler.Update).Methods("PATCH")
+	meGroup := api.PathPrefix("/me").Subrouter()
+	meGroup.HandleFunc("", userHandler.GetUser).Methods("GET")
+	meGroup.HandleFunc("", userHandler.Update).Methods("PATCH")
+	meGroup.HandleFunc("", userHandler.Delete).Methods("DELETE")
+
+	preferencesGroup := meGroup.PathPrefix("/preferences").Subrouter()
+	preferencesGroup.HandleFunc("", preferenceHandler.GetPreference).Methods("GET")
+	preferencesGroup.HandleFunc("", preferenceHandler.Update).Methods("PATCH")
 }

@@ -12,10 +12,10 @@ type UserResponse struct {
 }
 
 type UserUpdateRequest struct {
-	Name       string `json:"name"`
-	FirstName  string `json:"first_name"`
-	LastName   string `json:"last_name"`
-	PictureURL string `json:"picture_url"`
+	Name       string `json:"name,omitempty"`
+	FirstName  string `json:"first_name,omitempty"`
+	LastName   string `json:"last_name,omitempty"`
+	PictureURL string `json:"picture_url,omitempty"`
 }
 
 func ToUserResponse(user *entity.User) *UserResponse {

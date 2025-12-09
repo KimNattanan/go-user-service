@@ -92,8 +92,36 @@ func (r *SessionRepo) FindByUserID(ctx context.Context, userID string) ([]*entit
 	return sessions, nil
 }
 
-func (r *SessionRepo) Revoke(ctx context.Context, id string) error {
+func (r *SessionRepo) Revoke_(ctx context.Context, id string) error {
+	r.rdb.Del(ctx, "session:"+id)
 	return r.rdb.HSet(ctx, "session:"+id, "is_revoked", true).Err()
+}
+
+func (r *SessionRepo) Revoke(ctx context.Context, id string) error {
+	key := "session:" + id
+
+	data, err := r.rdb.Get(ctx, key).Bytes()
+	if err != nil {
+		return err
+	}
+	ttl, err := r.rdb.TTL(ctx, key).Result()
+	if err != nil {
+		return err
+	}
+
+	var session entity.Session
+	if err := json.Unmarshal(data, &session); err != nil {
+		return err
+	}
+	session.IsRevoked = true
+	newData, err := json.Marshal(&session)
+	if err != nil {
+		return err
+	}
+	if err := r.rdb.Set(ctx, key, newData, ttl).Err(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func (r *SessionRepo) Delete(ctx context.Context, id string) error {

@@ -25,7 +25,7 @@ import (
 )
 
 func RegisterPrivateRoutes(r *mux.Router, db *gorm.DB, rdb *redis.Client, sessionStore sessions.Store) {
-	api := r.PathPrefix("/api/v2").Subrouter()
+	api := r.PathPrefix("/api/v1").Subrouter()
 
 	jwtMaker := token.NewJWTMaker(os.Getenv("JWT_SECRET"))
 	googleOauthConfig := &oauth2.Config{

@@ -7,18 +7,25 @@
         "version": "1.0"
     },
     "host": "localhost:8000",
-    "basePath": "/api/v2",
+    "basePath": "/api/v1",
     "paths": {
         "/auth/google/callback": {
             "get": {
                 "description": "Handles Google OAuth callback and creates a session",
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "Auth"
                 ],
                 "summary": "OAuth callback from Google",
                 "responses": {
-                    "303": {
-                        "description": "See Other"
+                    "200": {
+                        "description": "logged in successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
                     },
                     "400": {
                         "description": "Bad Request",
@@ -51,19 +58,29 @@
         },
         "/auth/logout": {
             "post": {
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "Auth"
                 ],
                 "summary": "Logout user",
                 "responses": {
-                    "204": {
-                        "description": "No Content"
+                    "200": {
+                        "description": "logged out successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
                     }
                 }
             }
         },
         "/me": {
             "get": {
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "Me"
                 ],
@@ -78,17 +95,30 @@
                 }
             },
             "delete": {
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "Me"
                 ],
                 "summary": "Delete current user",
                 "responses": {
-                    "204": {
-                        "description": "No Content"
+                    "200": {
+                        "description": "user deleted",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
                     }
                 }
             },
             "patch": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "Me"
                 ],
@@ -163,6 +193,12 @@
         },
         "/users/{id}": {
             "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "Users"
                 ],

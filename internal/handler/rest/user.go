@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/KimNattanan/go-user-service/internal/dto"
@@ -37,8 +36,8 @@ func NewHttpUserHandler(userUsecase usecase.UserUsecase, sessionUsecase usecase.
 }
 
 // @Summary Redirect to Google OAuth login
-// @Tags Auth
 // @Description Redirects user to Google OAuth provider
+// @Tags Auth
 // @Success 302
 // @Router /auth/google/login [get]
 func (h *HttpUserHandler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
@@ -58,13 +57,15 @@ func (h *HttpUserHandler) GoogleLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 // @Summary OAuth callback from Google
-// @Tags Auth
 // @Description Handles Google OAuth callback and creates a session
-// @Success 303
+// @Tags Auth
+// @Produce json
+// @Success 200 {object} map[string]interface{} "logged in successfully"
 // @Failure 400 {string} string
 // @Failure 401 {string} string
 // @Router /auth/google/callback [get]
 func (h *HttpUserHandler) GoogleCallback(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	ctx := r.Context()
 	query := r.URL.Query()
 	if state, err := r.Cookie("oauthstate"); err != nil || state.Value != query.Get("state") {
@@ -140,13 +141,13 @@ func (h *HttpUserHandler) GoogleCallback(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	w.Header().Set("Location", os.Getenv("FRONTEND_OAUTH_REDIRECT_URL"))
-	w.WriteHeader(http.StatusSeeOther)
+	json.NewEncoder(w).Encode(map[string]interface{}{"message": "logged in successfully"})
 }
 
 // @Summary Logout user
 // @Tags Auth
-// @Success 204
+// @Produce json
+// @Success 200 {object} map[string]interface{} "logged out successfully"
 // @Router /auth/logout [post]
 func (h *HttpUserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -171,12 +172,13 @@ func (h *HttpUserHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	cookieSession.Values["access_token"] = ""
 	cookieSession.Save(r, w)
 
-	w.WriteHeader(http.StatusNoContent)
+	json.NewEncoder(w).Encode(map[string]interface{}{"message": "logged out successfully"})
 }
 
 // @Summary Delete current user
 // @Tags Me
-// @Success 204
+// @Produce json
+// @Success 200 {object} map[string]interface{} "user deleted"
 // @Router /me [delete]
 func (h *HttpUserHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
@@ -188,11 +190,13 @@ func (h *HttpUserHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	json.NewEncoder(w).Encode(map[string]interface{}{"message": "user deleted"})
 }
 
 // @Summary Get public user profile by ID
 // @Tags Users
+// @Accept json
+// @Produce json
 // @Param id path string true "User ID"
 // @Success 200 {object} dto.UserResponse
 // @Failure 404 {string} string
@@ -214,6 +218,7 @@ func (h *HttpUserHandler) FindUser(w http.ResponseWriter, r *http.Request) {
 
 // @Summary Get current user
 // @Tags Me
+// @Produce json
 // @Success 200 {object} dto.UserResponse
 // @Router /me [get]
 func (h *HttpUserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
@@ -232,6 +237,8 @@ func (h *HttpUserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 // @Summary Update current user
 // @Tags Me
+// @Accept json
+// @Produce json
 // @Param request body dto.UserUpdateRequest true "Update user payload"
 // @Success 200 {object} dto.UserResponse
 // @Failure 400 {string} string

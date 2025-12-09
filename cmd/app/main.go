@@ -3,7 +3,7 @@
 // @description Public + Private API for auth, users, and preferences.
 
 // @host localhost:8000
-// @BasePath /api/v2
+// @BasePath /api/v1
 
 // @securityDefinitions.apikey SessionCookie
 // @in cookie

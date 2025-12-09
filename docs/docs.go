@@ -18,13 +18,20 @@ const docTemplate = `{
         "/auth/google/callback": {
             "get": {
                 "description": "Handles Google OAuth callback and creates a session",
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "Auth"
                 ],
                 "summary": "OAuth callback from Google",
                 "responses": {
-                    "303": {
-                        "description": "See Other"
+                    "200": {
+                        "description": "logged in successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
                     },
                     "400": {
                         "description": "Bad Request",
@@ -57,19 +64,29 @@ const docTemplate = `{
         },
         "/auth/logout": {
             "post": {
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "Auth"
                 ],
                 "summary": "Logout user",
                 "responses": {
-                    "204": {
-                        "description": "No Content"
+                    "200": {
+                        "description": "logged out successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
                     }
                 }
             }
         },
         "/me": {
             "get": {
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "Me"
                 ],
@@ -84,17 +101,30 @@ const docTemplate = `{
                 }
             },
             "delete": {
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "Me"
                 ],
                 "summary": "Delete current user",
                 "responses": {
-                    "204": {
-                        "description": "No Content"
+                    "200": {
+                        "description": "user deleted",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
                     }
                 }
             },
             "patch": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "Me"
                 ],
@@ -169,6 +199,12 @@ const docTemplate = `{
         },
         "/users/{id}": {
             "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
                 "tags": [
                     "Users"
                 ],
@@ -270,7 +306,7 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "localhost:8000",
-	BasePath:         "/api/v2",
+	BasePath:         "/api/v1",
 	Schemes:          []string{},
 	Title:            "User Service API",
 	Description:      "Public + Private API for auth, users, and preferences.",

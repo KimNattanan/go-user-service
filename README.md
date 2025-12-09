@@ -10,8 +10,9 @@
 
 # go-user-service
 
-A Go-based user authentication service built with Clean Architecture, featuring Google OAuth2 login/signup, secure access/refresh token flows with rotation, and a clean modular structure.
-The service exposes RESTful APIs using Gorilla Mux, and uses PostgreSQL and Redis for data persistence and token/session management.
+A Go-based user authentication service built using Clean Architecture.
+
+It supports Google OAuth2, secure access/refresh token rotation, and uses PostgreSQL + Redis for persistence and session management.
 
 ## Features
 
@@ -21,43 +22,54 @@ The service exposes RESTful APIs using Gorilla Mux, and uses PostgreSQL and Redi
 - Secure token storage & validation
 - REST API built with Gorilla Mux
 - PostgreSQL for persistent user data
-- Redis for managing refresh tokens, blacklisting, and sessions
+- Redis for managing refresh tokens and sessions
 - Modular, testable codebase
+- Built-in Swagger documentation
+
+## Prerequisites
+
+- Go 1.24+
+- Docker & Docker Compose
 
 ## Getting Started
 
 1. Clone the repository:
 
-```sh
-git clone https://github.com/KimNattanan/go-user-service.git
-cd go-user-service
-```
+    ```sh
+    git clone https://github.com/KimNattanan/go-user-service.git
+    cd go-user-service
+    ```
 
 2. Install Go module dependencies:
 
-```sh
-go mod tidy
-```
+    ```sh
+    go mod tidy
+    ```
 
-3. Copy the environment file `.env.example`, rename it to `.env.development`, and configure it.
+3. Configure environment variables
+
+    Copy `.env.example`, rename it to `.env.development`, then configure it.
 
 4. Start the databases using Docker Compose:
 
-```sh
-docker-compose up -d
-```
+    ```sh
+    docker-compose up -d
+    ```
 
 5. Run the application:
 
-```sh
-go run ./cmd/app
-```
+    ```sh
+    go run ./cmd/app
+    ```
+
+See Swagger UI at: `localhost:8000/swagger/index.html`
 
 ## Project Structure
 
 ```
 .
 ├── cmd/app/main.go
+├── docs/
 ├── internal
 │   ├── app
 │   │   ├── app.go
@@ -107,3 +119,23 @@ go run ./cmd/app
 ├── LICENSE
 └── README.md
 ```
+
+## Endpoints
+
+| Endpoint | Method | Description 
+|-|-|-|
+| /api/v1/auth/google/login | GET | Redirects to Google OAuth provider
+| /api/v1/auth/google/callback | GET | Handles Google OAuth callback
+| /api/v1/auth/logout | POST | Logout user
+| /api/v1/me | GET | Get user
+| /api/v1/me | PATCH | Update user info
+| /api/v1/me | DELETE | Delete user
+| /api/v1/me/preferences | GET | Get user's preferences
+| /api/v1/me/preferences | PATCH | Update user's preferences
+| /api/v1/users/{id} | GET | Find user by userID
+
+## License
+
+This project is licensed under the MIT License.
+
+See the `LICENSE` file for details.

@@ -10,8 +10,7 @@
 
 # go-user-service
 
-A Go-based user authentication service built using Clean Architecture.
-
+A Go-based user authentication service built using Clean Architecture.\
 It supports Google OAuth2, secure access/refresh token rotation, and uses PostgreSQL + Redis for persistence and session management.
 
 ## Features
@@ -136,6 +135,5 @@ See Swagger UI at: `localhost:8000/swagger/index.html`
 
 ## License
 
-This project is licensed under the MIT License.
-
+This project is licensed under the MIT License.\
 See the `LICENSE` file for details.

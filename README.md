@@ -1,7 +1,7 @@
 <p align="center">
   <a href='#'>
     <img 
-      src="https://github.com/user-attachments/assets/4bdad212-b6e8-444e-aefb-560796c3c56d"
+      src="https://www.nattanan.kim/_next/image?url=%2Fimg%2Fprojects%2Fgo-user-service-thumb.png&w=750&q=75"
       alt="https://iconbu.com/illust/4214"
       width="200"
     />

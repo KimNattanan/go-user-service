@@ -15,7 +15,7 @@ It supports Google OAuth2, secure access/refresh token rotation, and uses Postgr
 
 ## Features
 
-- Clean Architecture with clear separation of concerns (domain, use case, interfaces, infrastructure)
+- Clean Architecture with clear separation of concerns
 - Google OAuth2 authentication (login & signup)
 - Access/Refresh token flow with rotation and proper invalidation
 - Secure token storage & validation

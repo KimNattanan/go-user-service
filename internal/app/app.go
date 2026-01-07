@@ -16,7 +16,7 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
-func setupDependencies(env string) (*config.Config, *gorm.DB, *redis.Client, sessions.Store, error) {
+func SetupDependencies(env string) (*config.Config, *gorm.DB, *redis.Client, sessions.Store, error) {
 	cfg := config.LoadConfig(env)
 
 	db, err := database.Connect(cfg.DBDSN)
@@ -44,7 +44,7 @@ func setupDependencies(env string) (*config.Config, *gorm.DB, *redis.Client, ses
 	return cfg, db, rdb, sessionStore, nil
 }
 
-func setupRestServer(db *gorm.DB, rdb *redis.Client, sessionStore sessions.Store, cfg *config.Config) *mux.Router {
+func SetupRestServer(db *gorm.DB, rdb *redis.Client, sessionStore sessions.Store, cfg *config.Config) *mux.Router {
 	r := mux.NewRouter()
 	r.Use(middleware.CORS)
 	routes.RegisterPublicRoutes(r, db, rdb, sessionStore, cfg)

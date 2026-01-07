@@ -21,6 +21,10 @@ func (u *UserUsecase) Create(ctx context.Context, user *entity.User) error {
 	return u.repo.Create(ctx, user)
 }
 
+func (u *UserUsecase) FindAll(ctx context.Context) ([]*entity.User, error) {
+	return u.repo.FindAll(ctx)
+}
+
 func (u *UserUsecase) FindByID(ctx context.Context, id string) (*entity.User, error) {
 	return u.repo.FindByID(ctx, id)
 }

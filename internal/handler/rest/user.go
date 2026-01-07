@@ -33,7 +33,7 @@ func NewHttpUserHandler(userUsecase usecase.UserUsecase, sessionUsecase usecase.
 		sessionStore:      sessionStore,
 		googleOauthConfig: googleOauthConfig,
 		jwtMaker:          jwtMaker,
-		jwtExpiration: time.Duration(jwtExpiration),
+		jwtExpiration:     time.Duration(jwtExpiration),
 	}
 }
 
@@ -195,7 +195,7 @@ func (h *HttpUserHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]interface{}{"message": "user deleted"})
 }
 
-// @Summary Get public user profile by ID
+// @Summary Get user by ID
 // @Tags Users
 // @Accept json
 // @Produce json
@@ -216,6 +216,24 @@ func (h *HttpUserHandler) FindUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(dto.ToUserResponse(user))
+}
+
+// @Summary Get all users
+// @Tags Users
+// @Produce json
+// @Success 200 {array} dto.UserResponse
+// @Router /users [get]
+func (h *HttpUserHandler) FindAllUsers(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	ctx := r.Context()
+
+	users, err := h.userUsecase.FindAll(ctx)
+	if err != nil {
+		http.Error(w, err.Error(), apperror.StatusCode(err))
+		return
+	}
+
+	json.NewEncoder(w).Encode(dto.ToUserResponseList(users))
 }
 
 // @Summary Get current user

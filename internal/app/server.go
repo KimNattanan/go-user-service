@@ -12,12 +12,12 @@ import (
 )
 
 func Start() {
-	cfg, db, rdb, sessionStore, err := setupDependencies("development")
+	cfg, db, rdb, sessionStore, err := SetupDependencies("development")
 	if err != nil {
 		log.Fatalf("failed to setup dependencies: %v", err)
 	}
 
-	r := setupRestServer(db, rdb, sessionStore, cfg)
+	r := SetupRestServer(db, rdb, sessionStore, cfg)
 
 	srv := httpserver.Start(r, cfg)
 
@@ -37,5 +37,5 @@ func Start() {
 		log.Printf("redis client close failed: %v", err)
 	}
 
-	log.Println("Server exited properly")
+	log.Println("Server shutted down.")
 }

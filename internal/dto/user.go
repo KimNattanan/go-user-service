@@ -28,3 +28,11 @@ func ToUserResponse(user *entity.User) *UserResponse {
 		Preference: ToPreferenceResponse(&user.Preference),
 	}
 }
+
+func ToUserResponseList(users []*entity.User) []*UserResponse {
+	userResponses := make([]*UserResponse, len(users))
+	for i, user := range users {
+		userResponses[i] = ToUserResponse(user)
+	}
+	return userResponses
+}

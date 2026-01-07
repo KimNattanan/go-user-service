@@ -20,6 +20,19 @@ func (r *UserRepo) Create(ctx context.Context, user *entity.User) error {
 	return db.Create(user).Error
 }
 
+func (r *UserRepo) FindAll(ctx context.Context) ([]*entity.User, error) {
+	db := r.db.WithContext(ctx)
+	var userValues []entity.User
+	if err := db.Preload("Preference").Find(&userValues).Error; err != nil { //.First(&user, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	users := make([]*entity.User, len(userValues))
+	for i := range users {
+		users[i] = &userValues[i]
+	}
+	return users, nil
+}
+
 func (r *UserRepo) FindByID(ctx context.Context, id string) (*entity.User, error) {
 	db := r.db.WithContext(ctx)
 	var user entity.User

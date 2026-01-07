@@ -61,6 +61,12 @@ It supports Google OAuth2, secure access/refresh token rotation, and uses Postgr
     go run ./cmd/app
     ```
 
+6. Test:
+
+   ```sh
+   go test ./pkg/routes
+   ```
+
 See Swagger UI at: `localhost:8000/swagger/index.html`
 
 ## Project Structure
@@ -78,8 +84,8 @@ See Swagger UI at: `localhost:8000/swagger/index.html`
 │   │   └── user.go
 │   ├── entity
 │   │   ├── preference.go
-│   │   ├── user.go
-│   │   └── session.go
+│   │   ├── session.go
+│   │   └── user.go
 │   ├── handler
 │   │   └── rest
 │   │       ├── preference.go
@@ -105,17 +111,21 @@ See Swagger UI at: `localhost:8000/swagger/index.html`
 │       └── interface.go
 ├── pkg
 │   ├── apperror/
+│   ├── config/
 │   ├── database/
+│   ├── httpserver/
 │   ├── redisclient/
 │   ├── routes
+│   │   ├── notfound_route.go
 │   │   ├── private_routes.go
-│   │   └── public_routes.go
-│   └── token
-├── .env.example
-├── .gitignore
-├── docker-compose.yml
-├── go.mod
-├── LICENSE
+│   │   ├── public_routes.go
+│   │   └── public_routes_test.go
+│   └── token/
+│── .env.example
+│── .gitignore
+│── docker-compose.yml
+│── go.mod
+│── LICENSE
 └── README.md
 ```
 
@@ -131,6 +141,7 @@ See Swagger UI at: `localhost:8000/swagger/index.html`
 | /api/v1/me | DELETE | Delete user
 | /api/v1/me/preferences | GET | Get user's preferences
 | /api/v1/me/preferences | PATCH | Update user's preferences
+| /api/v1/users | GET | Find all users
 | /api/v1/users/{id} | GET | Find user by userID
 
 ## License

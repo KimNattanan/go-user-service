@@ -1,16 +1,14 @@
 package app
 
 import (
-	"log"
-	"os"
-
+	"github.com/KimNattanan/go-user-service/internal/entity"
 	"github.com/KimNattanan/go-user-service/internal/middleware"
+	"github.com/KimNattanan/go-user-service/pkg/config"
 	"github.com/KimNattanan/go-user-service/pkg/database"
 	"github.com/KimNattanan/go-user-service/pkg/redisclient"
 	"github.com/KimNattanan/go-user-service/pkg/routes"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
-	"github.com/joho/godotenv"
 	"github.com/redis/go-redis/v9"
 	"gorm.io/gorm"
 
@@ -18,32 +16,40 @@ import (
 	httpSwagger "github.com/swaggo/http-swagger/v2"
 )
 
-func setupDependencies(env string) (*gorm.DB, *redis.Client, sessions.Store, error) {
-	envFile := ".env"
-	if env != "" {
-		envFile = ".env." + env
-	}
-	if err := godotenv.Load(envFile); err != nil {
-		log.Printf("Warning: could not load .env file: %v", err)
-	}
+func setupDependencies(env string) (*config.Config, *gorm.DB, *redis.Client, sessions.Store, error) {
+	cfg := config.LoadConfig(env)
 
-	db, err := database.Connect()
+	db, err := database.Connect(cfg.DBDSN)
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
 
-	rdb := redisclient.Connect()
+	if env == "test" {
+		db.Migrator().DropTable(
+			&entity.User{},
+			&entity.Preference{},
+		)
+	}
+	if err := db.Migrator().AutoMigrate(
+		&entity.User{},
+		&entity.Preference{},
+	); err != nil {
+		return nil, nil, nil, nil, err
+	}
 
-	sessionStore := sessions.NewCookieStore([]byte(os.Getenv("SESSION_KEY")))
+	rdb := redisclient.Connect(cfg.RedisAddr, cfg.RedisPassword, cfg.RedisDB)
 
-	return db, rdb, sessionStore, nil
+	sessionStore := sessions.NewCookieStore([]byte(cfg.SessionKey))
+
+	return cfg, db, rdb, sessionStore, nil
 }
 
-func setupRestServer(db *gorm.DB, rdb *redis.Client, sessionStore sessions.Store) *mux.Router {
+func setupRestServer(db *gorm.DB, rdb *redis.Client, sessionStore sessions.Store, cfg *config.Config) *mux.Router {
 	r := mux.NewRouter()
 	r.Use(middleware.CORS)
-	routes.RegisterPublicRoutes(r, db, rdb, sessionStore)
-	routes.RegisterPrivateRoutes(r, db, rdb, sessionStore)
+	routes.RegisterPublicRoutes(r, db, rdb, sessionStore, cfg)
+	routes.RegisterPrivateRoutes(r, db, rdb, sessionStore, cfg)
+	routes.RegisterNotFoundRoute(r)
 	r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
 	return r
 }

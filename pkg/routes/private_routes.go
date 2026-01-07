@@ -1,10 +1,9 @@
 package routes
 
 import (
-	"os"
-
 	"github.com/KimNattanan/go-user-service/internal/handler/rest"
 	"github.com/KimNattanan/go-user-service/internal/middleware"
+	"github.com/KimNattanan/go-user-service/pkg/config"
 	"github.com/KimNattanan/go-user-service/pkg/token"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/oauth2"
@@ -24,14 +23,14 @@ import (
 	"gorm.io/gorm"
 )
 
-func RegisterPrivateRoutes(r *mux.Router, db *gorm.DB, rdb *redis.Client, sessionStore sessions.Store) {
+func RegisterPrivateRoutes(r *mux.Router, db *gorm.DB, rdb *redis.Client, sessionStore sessions.Store, cfg *config.Config) {
 	api := r.PathPrefix("/api/v1").Subrouter()
 
-	jwtMaker := token.NewJWTMaker(os.Getenv("JWT_SECRET"))
+	jwtMaker := token.NewJWTMaker(cfg.JWTSecret)
 	googleOauthConfig := &oauth2.Config{
-		ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
-		ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
-		RedirectURL:  os.Getenv("GOOGLE_OAUTH_REDIRECT_URL"),
+		ClientID:     cfg.GoogleClientID,
+		ClientSecret: cfg.GoogleClientSecret,
+		RedirectURL:  cfg.GoogleRedirectURL,
 		Scopes:       []string{"openid", "email", "profile"},
 		Endpoint:     google.Endpoint,
 	}
@@ -44,7 +43,7 @@ func RegisterPrivateRoutes(r *mux.Router, db *gorm.DB, rdb *redis.Client, sessio
 	sessionUsecase := sessionUsecase.NewSessionUsecase(sessionRepo)
 	preferenceUsecase := preferenceUsecase.NewPreferenceUsecase(preferenceRepo)
 
-	userHandler := rest.NewHttpUserHandler(userUsecase, sessionUsecase, sessionStore, googleOauthConfig, jwtMaker)
+	userHandler := rest.NewHttpUserHandler(userUsecase, sessionUsecase, sessionStore, googleOauthConfig, jwtMaker, cfg.JWTExpiration)
 	preferenceHandler := rest.NewHttpPreferenceHandler(preferenceUsecase)
 
 	authMiddleware := middleware.NewAuthMiddleware(userUsecase, sessionUsecase, sessionStore, jwtMaker, googleOauthConfig)

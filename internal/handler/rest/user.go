@@ -23,15 +23,17 @@ type HttpUserHandler struct {
 	sessionStore      sessions.Store
 	googleOauthConfig *oauth2.Config
 	jwtMaker          *token.JWTMaker
+	jwtExpiration     time.Duration
 }
 
-func NewHttpUserHandler(userUsecase usecase.UserUsecase, sessionUsecase usecase.SessionUsecase, sessionStore sessions.Store, googleOauthConfig *oauth2.Config, jwtMaker *token.JWTMaker) *HttpUserHandler {
+func NewHttpUserHandler(userUsecase usecase.UserUsecase, sessionUsecase usecase.SessionUsecase, sessionStore sessions.Store, googleOauthConfig *oauth2.Config, jwtMaker *token.JWTMaker, jwtExpiration int) *HttpUserHandler {
 	return &HttpUserHandler{
 		userUsecase:       userUsecase,
 		sessionUsecase:    sessionUsecase,
 		sessionStore:      sessionStore,
 		googleOauthConfig: googleOauthConfig,
 		jwtMaker:          jwtMaker,
+		jwtExpiration: time.Duration(jwtExpiration),
 	}
 }
 
@@ -103,7 +105,7 @@ func (h *HttpUserHandler) GoogleCallback(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	refreshToken, refreshClaims, err := h.jwtMaker.CreateToken(user.ID, time.Hour*24*30)
+	refreshToken, refreshClaims, err := h.jwtMaker.CreateToken(user.ID, time.Second*h.jwtExpiration)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

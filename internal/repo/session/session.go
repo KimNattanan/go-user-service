@@ -92,11 +92,6 @@ func (r *SessionRepo) FindByUserID(ctx context.Context, userID string) ([]*entit
 	return sessions, nil
 }
 
-func (r *SessionRepo) Revoke_(ctx context.Context, id string) error {
-	r.rdb.Del(ctx, "session:"+id)
-	return r.rdb.HSet(ctx, "session:"+id, "is_revoked", true).Err()
-}
-
 func (r *SessionRepo) Revoke(ctx context.Context, id string) error {
 	key := "session:" + id
 

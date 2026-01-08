@@ -20,15 +20,17 @@ type AuthMiddleware struct {
 	sessionStore      sessions.Store
 	jwtMaker          *token.JWTMaker
 	googleOauthConfig *oauth2.Config
+	jwtExpiration     time.Duration
 }
 
-func NewAuthMiddleware(userUsecase usecase.UserUsecase, sessionUsecase usecase.SessionUsecase, sessionStore sessions.Store, jwtMaker *token.JWTMaker, googleOauthConfig *oauth2.Config) *AuthMiddleware {
+func NewAuthMiddleware(userUsecase usecase.UserUsecase, sessionUsecase usecase.SessionUsecase, sessionStore sessions.Store, jwtMaker *token.JWTMaker, googleOauthConfig *oauth2.Config, jwtExpiration int) *AuthMiddleware {
 	return &AuthMiddleware{
 		userUsecase:       userUsecase,
 		sessionUsecase:    sessionUsecase,
 		sessionStore:      sessionStore,
 		jwtMaker:          jwtMaker,
 		googleOauthConfig: googleOauthConfig,
+		jwtExpiration:     time.Duration(jwtExpiration),
 	}
 }
 
@@ -89,7 +91,7 @@ func (m *AuthMiddleware) Handle(next http.Handler) http.Handler {
 			})
 		}()
 
-		refreshToken, refreshClaims, err = m.jwtMaker.CreateToken(user.ID, time.Hour*24*30)
+		refreshToken, refreshClaims, err = m.jwtMaker.CreateToken(user.ID, time.Second*m.jwtExpiration)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return

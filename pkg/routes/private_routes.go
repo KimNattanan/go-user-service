@@ -46,7 +46,7 @@ func RegisterPrivateRoutes(r *mux.Router, db *gorm.DB, rdb *redis.Client, sessio
 	userHandler := rest.NewHttpUserHandler(userUsecase, sessionUsecase, sessionStore, googleOauthConfig, jwtMaker, cfg.JWTExpiration)
 	preferenceHandler := rest.NewHttpPreferenceHandler(preferenceUsecase)
 
-	authMiddleware := middleware.NewAuthMiddleware(userUsecase, sessionUsecase, sessionStore, jwtMaker, googleOauthConfig)
+	authMiddleware := middleware.NewAuthMiddleware(userUsecase, sessionUsecase, sessionStore, jwtMaker, googleOauthConfig, cfg.JWTExpiration)
 	api.Use(authMiddleware.Handle)
 
 	authGroup := api.PathPrefix("/auth").Subrouter()

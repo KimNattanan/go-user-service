@@ -55,13 +55,13 @@ func LoadConfig(env string) *Config {
 		RedisPassword: getEnv("REDIS_PASSWORD", ""),
 		RedisDB:       getEnvAsInt("REDIS_DB", 0),
 
-		JWTSecret:     getEnv("JWT_SECRET", "supersecretkey"),
-		JWTExpiration: getEnvAsInt("JWT_EXPIRATION", 3600),
+		JWTSecret:     getEnv("JWT_SECRET", "secret"),
+		JWTExpiration: getEnvAsInt("JWT_EXPIRATION", 604800),
 		SessionKey:    getEnv("SESSION_KEY", "sessionsecretkey"),
 
 		GoogleClientID:     getEnv("GOOGLE_OAUTH_CLIENT_ID", ""),
 		GoogleClientSecret: getEnv("GOOGLE_OAUTH_CLIENT_SECRET", ""),
-		GoogleRedirectURL:  getEnv("GOOGLE_OAUTH_REDIRECT_URL", "http://localhost:8080/api/v1/auth/google/callback"),
+		GoogleRedirectURL:  getEnv("GOOGLE_OAUTH_REDIRECT_URL", "http://localhost:8000/api/v1/auth/google/callback"),
 	}
 	cfg.DBDSN = fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",

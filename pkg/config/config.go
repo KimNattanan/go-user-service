@@ -42,7 +42,7 @@ func LoadConfig(env string) *Config {
 	}
 
 	cfg := &Config{
-		Env:     getEnv("APP_ENV", "development"),
+		Env:     getEnv("ENV", "development"),
 		AppPort: getEnv("APP_PORT", "8000"),
 
 		DBHost:     getEnv("DB_HOST", "localhost"),

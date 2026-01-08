@@ -6,13 +6,13 @@ import (
 )
 
 type User struct {
-	ID           string `gorm:"type:uuid;primaryKey" json:"id"`
-	Email        string `json:"email"`
-	PasswordHash string `json:"password_hash"`
-	Name         string `json:"name"`
-	FirstName    string `json:"first_name"`
-	LastName     string `json:"last_name"`
-	PictureURL   string `json:"picture_url"`
+	ID         string `gorm:"type:uuid;primaryKey" json:"id"`
+	Email      string `json:"email"`
+	Password   string `json:"password"`
+	Name       string `json:"name"`
+	FirstName  string `json:"first_name"`
+	LastName   string `json:"last_name"`
+	PictureURL string `json:"picture_url"`
 
 	Preference Preference `gorm:"foreignKey:UserID;constraint:onDelete:CASCADE"`
 }

@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/KimNattanan/go-user-service/internal/usecase"
 	"github.com/KimNattanan/go-user-service/pkg/apperror"
 	"github.com/KimNattanan/go-user-service/pkg/token"
+	"github.com/asaskevich/govalidator"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"golang.org/x/oauth2"
@@ -135,6 +137,141 @@ func (h *HttpUserHandler) GoogleCallback(w http.ResponseWriter, r *http.Request)
 		HttpOnly: true,
 		Secure:   false,
 	})
+	cookieSession, _ := h.sessionStore.Get(r, "session")
+	cookieSession.Values["access_token"] = accessToken
+	cookieSession.Values["refresh_token"] = refreshToken
+	if err := cookieSession.Save(r, w); err != nil {
+		http.Error(w, err.Error(), apperror.StatusCode(err))
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{"message": "logged in successfully"})
+}
+
+// @Summary Register new user
+// @Tags Auth
+// @Produce json
+// @Success 200 {object} map[string]interface{} "registered successfully"
+// @Failure 400 {string} string
+// @Failure 401 {string} string
+// @Router /auth/register [post]
+func (h *HttpUserHandler) Register(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	ctx := r.Context()
+
+	req := new(dto.RegisterRequest)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, apperror.ErrInvalidData.Error(), http.StatusBadRequest)
+		return
+	}
+	ok, errr := govalidator.ValidateStruct(req)
+	fmt.Println(ok, errr, "!!")
+	if !ok {
+		http.Error(w, errr.Error(), http.StatusBadRequest)
+		return
+	}
+
+	user := &entity.User{
+		Email:      req.Email,
+		Password:   req.Password,
+		Name:       req.Name,
+		FirstName:  req.FirstName,
+		LastName:   req.LastName,
+		PictureURL: req.PictureURL,
+	}
+
+	user, err := h.userUsecase.Register(ctx, user)
+	if err != nil {
+		http.Error(w, err.Error(), apperror.StatusCode(err))
+		return
+	}
+
+	refreshToken, refreshClaims, err := h.jwtMaker.CreateToken(user.ID, time.Second*h.jwtExpiration)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	accessToken, _, err := h.jwtMaker.CreateToken(user.ID, time.Hour)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	session := &entity.Session{
+		ID:                 refreshClaims.RegisteredClaims.ID,
+		UserID:             user.ID,
+		GoogleRefreshToken: "",
+		IsRevoked:          false,
+		CreatedAt:          time.Now(),
+		ExpiresAt:          refreshClaims.RegisteredClaims.ExpiresAt.Time,
+	}
+	if err := h.sessionUsecase.Create(ctx, session); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	cookieSession, _ := h.sessionStore.Get(r, "session")
+	cookieSession.Values["access_token"] = accessToken
+	cookieSession.Values["refresh_token"] = refreshToken
+	if err := cookieSession.Save(r, w); err != nil {
+		http.Error(w, err.Error(), apperror.StatusCode(err))
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]interface{}{"message": "registered successfully"})
+}
+
+// @Summary Login user
+// @Tags Auth
+// @Produce json
+// @Success 200 {object} map[string]interface{} "logged in successfully"
+// @Failure 400 {string} string
+// @Failure 401 {string} string
+// @Router /auth/login [post]
+func (h *HttpUserHandler) Login(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	ctx := r.Context()
+
+	req := new(dto.LoginRequest)
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, apperror.ErrInvalidData.Error(), http.StatusBadRequest)
+		return
+	}
+	if ok, err := govalidator.ValidateStruct(req); !ok {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	user, err := h.userUsecase.Login(ctx, req.Email, req.Password)
+	if err != nil {
+		http.Error(w, "invalid email or password", http.StatusUnauthorized)
+		return
+	}
+
+	refreshToken, refreshClaims, err := h.jwtMaker.CreateToken(user.ID, time.Second*h.jwtExpiration)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	accessToken, _, err := h.jwtMaker.CreateToken(user.ID, time.Hour)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	session := &entity.Session{
+		ID:                 refreshClaims.RegisteredClaims.ID,
+		UserID:             user.ID,
+		GoogleRefreshToken: "",
+		IsRevoked:          false,
+		CreatedAt:          time.Now(),
+		ExpiresAt:          refreshClaims.RegisteredClaims.ExpiresAt.Time,
+	}
+	if err := h.sessionUsecase.Create(ctx, session); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	cookieSession, _ := h.sessionStore.Get(r, "session")
 	cookieSession.Values["access_token"] = accessToken
 	cookieSession.Values["refresh_token"] = refreshToken

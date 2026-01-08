@@ -1,6 +1,8 @@
 package routes_test
 
 import (
+	"bytes"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -33,6 +35,7 @@ func TestPublicRoutes(t *testing.T) {
 		name       string
 		method     string
 		path       string
+		body       map[string]string
 		wantStatus int
 	}{
 		{
@@ -47,11 +50,56 @@ func TestPublicRoutes(t *testing.T) {
 			path:       "/not-found",
 			wantStatus: http.StatusNotFound,
 		},
+		{
+			name:   "register new user",
+			method: http.MethodPost,
+			path:   "/api/v1/auth/register",
+			body: map[string]string{
+				"email":       "test@gmail.com",
+				"password":    "password123",
+				"name":        "user name",
+				"first_name":  "first",
+				"last_name":   "last",
+				"picture_url": "http://example.com/pic.jpg",
+			},
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:   "login the created user",
+			method: http.MethodPost,
+			path:   "/api/v1/auth/login",
+			body: map[string]string{
+				"email":    "test@gmail.com",
+				"password": "password123",
+			},
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:   "login with wrong password",
+			method: http.MethodPost,
+			path:   "/api/v1/auth/login",
+			body: map[string]string{
+				"email":    "test@gmail.com",
+				"password": "password1234",
+			},
+			wantStatus: http.StatusUnauthorized,
+		},
+		{
+			name:   "login with wrong email",
+			method: http.MethodPost,
+			path:   "/api/v1/auth/login",
+			body: map[string]string{
+				"email":    "taste@gmail.com",
+				"password": "password123",
+			},
+			wantStatus: http.StatusUnauthorized,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(tt.method, tt.path, nil)
+			body, _ := json.Marshal(tt.body)
+			req := httptest.NewRequest(tt.method, tt.path, bytes.NewReader(body))
 			rr := httptest.NewRecorder()
 
 			r.ServeHTTP(rr, req)

@@ -7,6 +7,7 @@ import (
 	"github.com/KimNattanan/go-user-service/internal/entity"
 	"github.com/KimNattanan/go-user-service/internal/repo"
 	"github.com/KimNattanan/go-user-service/pkg/apperror"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type UserUsecase struct {
@@ -15,10 +16,6 @@ type UserUsecase struct {
 
 func NewUserUsecase(repo repo.UserRepo) *UserUsecase {
 	return &UserUsecase{repo: repo}
-}
-
-func (u *UserUsecase) Create(ctx context.Context, user *entity.User) error {
-	return u.repo.Create(ctx, user)
 }
 
 func (u *UserUsecase) FindAll(ctx context.Context) ([]*entity.User, error) {
@@ -58,12 +55,12 @@ func (u *UserUsecase) LoginOrRegisterWithGoogle(ctx context.Context, userInfo ma
 	}
 	if user == nil {
 		user = &entity.User{
-			Email:        email,
-			Name:         name,
-			FirstName:    firstName,
-			LastName:     lastName,
-			PasswordHash: "",
-			PictureURL:   pictureURL,
+			Email:      email,
+			Name:       name,
+			FirstName:  firstName,
+			LastName:   lastName,
+			Password:   "",
+			PictureURL: pictureURL,
 		}
 		if err := u.repo.Create(ctx, user); err != nil {
 			return nil, err
@@ -76,6 +73,42 @@ func (u *UserUsecase) LoginOrRegisterWithGoogle(ctx context.Context, userInfo ma
 		}); err != nil {
 			return nil, err
 		}
+	}
+	return user, nil
+}
+
+func (u *UserUsecase) Register(ctx context.Context, user *entity.User) (*entity.User, error) {
+	existingUser, err := u.repo.FindByEmail(ctx, user.Email)
+	if existingUser != nil {
+		return nil, apperror.ErrAlreadyExists
+	}
+	if err != nil && !errors.Is(err, apperror.ErrRecordNotFound) {
+		return nil, err
+	}
+
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+	user.Password = string(passwordHash)
+
+	if err := u.repo.Create(ctx, user); err != nil {
+		return nil, err
+	}
+	createdUser, err := u.repo.FindByID(ctx, user.ID)
+	if err != nil {
+		return nil, err
+	}
+	return createdUser, nil
+}
+
+func (u *UserUsecase) Login(ctx context.Context, email, password string) (*entity.User, error) {
+	user, err := u.repo.FindByEmail(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		return nil, err
 	}
 	return user, nil
 }

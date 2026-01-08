@@ -40,6 +40,8 @@ func RegisterPublicRoutes(r *mux.Router, db *gorm.DB, rdb *redis.Client, session
 	userHandler := rest.NewHttpUserHandler(userUsecase, sessionUsecase, sessionStore, googleOauthConfig, jwtMaker, cfg.JWTExpiration)
 
 	authGroup := api.PathPrefix("/auth").Subrouter()
+	authGroup.HandleFunc("/register", userHandler.Register).Methods("POST")
+	authGroup.HandleFunc("/login", userHandler.Login).Methods("POST")
 	authGroup.HandleFunc("/google/login", userHandler.GoogleLogin).Methods("GET")
 	authGroup.HandleFunc("/google/callback", userHandler.GoogleCallback).Methods("GET")
 

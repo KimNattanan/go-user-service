@@ -18,6 +18,20 @@ type UserUpdateRequest struct {
 	PictureURL string `json:"picture_url,omitempty"`
 }
 
+type RegisterRequest struct {
+	Email      string `json:"email" valid:"required,email"`
+	Password   string `json:"password" valid:"required"`
+	Name       string `json:"name"`
+	FirstName  string `json:"first_name"`
+	LastName   string `json:"last_name"`
+	PictureURL string `json:"picture_url" valid:"url"`
+}
+
+type LoginRequest struct {
+	Email    string `json:"email" valid:"required,email"`
+	Password string `json:"password" valid:"required"`
+}
+
 func ToUserResponse(user *entity.User) *UserResponse {
 	return &UserResponse{
 		Email:      user.Email,

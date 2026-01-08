@@ -135,6 +135,8 @@ See Swagger UI at: `localhost:8000/swagger/index.html`
 |-|-|-|
 | /api/v1/auth/google/login | GET | Redirects to Google OAuth provider
 | /api/v1/auth/google/callback | GET | Handles Google OAuth callback
+| /api/v1/auth/register | POST | Register user
+| /api/v1/auth/login | POST | Login user
 | /api/v1/auth/logout | POST | Logout user
 | /api/v1/me | GET | Get user
 | /api/v1/me | PATCH | Update user info

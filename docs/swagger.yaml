@@ -74,6 +74,27 @@ paths:
       summary: Redirect to Google OAuth login
       tags:
       - Auth
+  /auth/login:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: logged in successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+      summary: Login user
+      tags:
+      - Auth
   /auth/logout:
     post:
       produces:
@@ -85,6 +106,27 @@ paths:
             additionalProperties: true
             type: object
       summary: Logout user
+      tags:
+      - Auth
+  /auth/register:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: registered successfully
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+      summary: Register new user
       tags:
       - Auth
   /me:
@@ -161,6 +203,20 @@ paths:
       summary: Update user preferences
       tags:
       - Preferences
+  /users:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.UserResponse'
+            type: array
+      summary: Get all users
+      tags:
+      - Users
   /users/{id}:
     get:
       consumes:
@@ -182,7 +238,7 @@ paths:
           description: Not Found
           schema:
             type: string
-      summary: Get public user profile by ID
+      summary: Get user by ID
       tags:
       - Users
 swagger: "2.0"

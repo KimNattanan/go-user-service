@@ -1,6 +1,9 @@
 package app
 
 import (
+	"encoding/base64"
+	"net/http"
+
 	"github.com/KimNattanan/go-user-service/internal/entity"
 	"github.com/KimNattanan/go-user-service/internal/middleware"
 	"github.com/KimNattanan/go-user-service/pkg/config"
@@ -39,7 +42,17 @@ func SetupDependencies(env string) (*config.Config, *gorm.DB, *redis.Client, ses
 
 	rdb := redisclient.Connect(cfg.RedisAddr, cfg.RedisPassword, cfg.RedisDB)
 
-	sessionStore := sessions.NewCookieStore([]byte(cfg.SessionKey))
+	authKey, _ := base64.StdEncoding.DecodeString(cfg.SessionAuthKey)
+	encKey, _ := base64.StdEncoding.DecodeString(cfg.SessionEncKey)
+
+	sessionStore := sessions.NewCookieStore(authKey, encKey)
+	sessionStore.Options = &sessions.Options{
+		Path:     "/",
+		MaxAge:   cfg.JWTExpiration,
+		HttpOnly: true,
+		Secure:   cfg.Env == "production",
+		SameSite: http.SameSiteLaxMode,
+	}
 
 	return cfg, db, rdb, sessionStore, nil
 }

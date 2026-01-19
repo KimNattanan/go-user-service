@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"cloud.google.com/go/auth/credentials/idtoken"
 	"github.com/KimNattanan/go-user-service/internal/dto"
 	"github.com/KimNattanan/go-user-service/internal/entity"
 	"github.com/KimNattanan/go-user-service/internal/usecase"
@@ -87,17 +88,29 @@ func (h *HttpUserHandler) GoogleCallback(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	client := h.googleOauthConfig.Client(ctx, token)
-	clientRes, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
-	if err != nil {
-		http.Error(w, "failed to get user info", apperror.StatusCode(err))
+	rawIDToken, ok := token.Extra("id_token").(string)
+	if !ok {
+		http.Error(w, "id_token missing", http.StatusUnauthorized)
 		return
 	}
-	defer clientRes.Body.Close()
 
-	var userInfo map[string]interface{}
-	if err := json.NewDecoder(clientRes.Body).Decode(&userInfo); err != nil {
-		http.Error(w, "failed to decode user info", apperror.StatusCode(err))
+	payload, err := idtoken.Validate(ctx, rawIDToken, h.googleOauthConfig.ClientID)
+	if err != nil {
+		http.Error(w, "invalid id token", http.StatusUnauthorized)
+		return
+	}
+
+	userInfo := map[string]interface{}{
+		"sub":            payload.Subject,
+		"email":          payload.Claims["email"],
+		"email_verified": payload.Claims["email_verified"],
+		"name":           payload.Claims["name"],
+		"given_name":     payload.Claims["given_name"],
+		"family_name":    payload.Claims["family_name"],
+		"picture":        payload.Claims["picture"],
+	}
+	if userInfo["email_verified"] != true {
+		http.Error(w, "email not verified", http.StatusUnauthorized)
 		return
 	}
 
@@ -135,7 +148,7 @@ func (h *HttpUserHandler) GoogleCallback(w http.ResponseWriter, r *http.Request)
 		Name:     "oauthstate",
 		Expires:  time.Now(),
 		HttpOnly: true,
-		Secure:   false,
+		Secure:   true,
 	})
 	cookieSession, _ := h.sessionStore.Get(r, "session")
 	cookieSession.Values["access_token"] = accessToken

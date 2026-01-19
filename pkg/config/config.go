@@ -23,9 +23,10 @@ type Config struct {
 	RedisPassword string
 	RedisDB       int
 
-	JWTSecret     string
-	JWTExpiration int // in seconds
-	SessionKey    string
+	JWTSecret      string
+	JWTExpiration  int // in seconds
+	SessionAuthKey string
+	SessionEncKey  string
 
 	GoogleClientID     string
 	GoogleClientSecret string
@@ -55,9 +56,10 @@ func LoadConfig(env string) *Config {
 		RedisPassword: getEnv("REDIS_PASSWORD", ""),
 		RedisDB:       getEnvAsInt("REDIS_DB", 0),
 
-		JWTSecret:     getEnv("JWT_SECRET", "secret"),
-		JWTExpiration: getEnvAsInt("JWT_EXPIRATION", 604800),
-		SessionKey:    getEnv("SESSION_KEY", "sessionsecretkey"),
+		JWTSecret:      getEnv("JWT_SECRET", "secret"),
+		JWTExpiration:  getEnvAsInt("JWT_EXPIRATION", 60*60*24*7),
+		SessionAuthKey: getEnv("SESSION_AUTH_KEY", ""),
+		SessionEncKey:  getEnv("SESSION_ENC_KEY", ""),
 
 		GoogleClientID:     getEnv("GOOGLE_OAUTH_CLIENT_ID", ""),
 		GoogleClientSecret: getEnv("GOOGLE_OAUTH_CLIENT_SECRET", ""),

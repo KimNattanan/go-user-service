@@ -151,6 +151,7 @@ func (h *HttpUserHandler) GoogleCallback(w http.ResponseWriter, r *http.Request)
 		Expires:  time.Now(),
 		HttpOnly: true,
 		Secure:   true,
+		SameSite: http.SameSiteLaxMode,
 	})
 	cookieSession, _ := h.sessionStore.Get(r, "session")
 	cookieSession.Values["access_token"] = accessToken
